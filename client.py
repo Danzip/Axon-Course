@@ -1,13 +1,19 @@
 from socket import *
 import json
-
+OK = 'OK'
+GOODBYE = 'GOODBYE'
+ALL = '*'
+ERROR = 'ERROR'
+UNKNOWN_COMMAND = 'Unknown command'
+COMMANDS = {}
 class Client:
 
-    def __init__(self,socket=None,info_types=None):
+    def __init__(self,socket=None,info_types=None,name=None):
         self.info_types=info_types
         self.socket=socket
-        if socket is None:
-            self.socket=self.create_socket()
+        self.name=name
+        if self.socket is None:
+            self.create_socket()
 
     def add_info_type(self,infoType,value):
         self.info_types[infoType]=value
@@ -18,13 +24,20 @@ class Client:
 
     def send_response(self,response):
         packed_response=json.dumps(response)
+        print "packed response is {} type is {}".format(packed_response,type(packed_response))
         self.socket.send(packed_response)
+        response = self.receive()
+        if response!= OK:
+            print "server issue"
+            self.socket.close()
+            return
 
 
     def handle_command(self, command_dict):
         if command_dict["command"]==["info_types"]:
            self.send_response({"info_types":self.info_types.keys()})
-        elif command_dict in self.info_types.keys():
+        elif command_dict["command"] in self.info_types.keys():
+            print
             self.send_response({command_dict : self.info_types[command_dict]})
         elif command_dict == "*":
             self.send_response(self.info_types)
@@ -37,26 +50,38 @@ class Client:
 
 
     def create_socket(self,domain=AF_INET,type=SOCK_STREAM):
-        self.socket=socket(domain,type)
+        new_socket=socket(domain,type)
+        print new_socket
+        self.socket=new_socket
+        print self.socket
 
     def receive(self):
-        return self.socket.recv(1024)
+        response_packed=self.socket.recv(1024)
+        return json.loads(response_packed)
 
     def send(self,data):
         self.socket.send(data)
 
 
-    def connect(self,address=gethostname(),port=5656):
-        self.socket.connect((address,port))
+    def connect(self,server_address):
+        self.socket.connect(server_address)
 
-    def handle_connection(self,address=gethostname(),port=5656):
-        self.connect(address,port)
+    def handle_connection(self):
+        server_address=('10.35.77.221',3030)
+        self.connect(server_address)
+        self.send_response(self.name)
+
+
+        self.send_response(self.info_types)
+
         while True:
-            server_command_packed=self.receive()
-            unpacked_command=json.loads(server_command_packed)
-            quit_connection=self.handle_command(unpacked_command)
+            command=self.receive()
+            #print server_command_packed
+            #unpacked_command=json.loads(server_command_packed)
+            quit_connection=self.handle_command(command)
             if quit_connection:
                 self.socket.close()
+                break
         pass
 
 info_types={"os_type": "Linux Ubuntu 16.04.1",
@@ -65,8 +90,12 @@ info_types={"os_type": "Linux Ubuntu 16.04.1",
   "ports": ["8000","12345"],
   "storage_usage": "2.5T",
   "gpu_type": ["GeForce GTX 1080 Ti", "GeForce GTX 1080 Ti"]}
+name="Daniel"
+#address='10.35.77.221',port=3030
 
-c=Client(info_types=info_types)
+
+c=Client(info_types=info_types,name=name)
+
 c.handle_connection()
 
 
