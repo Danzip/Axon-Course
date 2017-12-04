@@ -26,11 +26,11 @@ class Client:
         packed_response=json.dumps(response)
         print "packed response is {} type is {}".format(packed_response,type(packed_response))
         self.socket.send(packed_response)
-        response = self.receive()
-        if response!= OK:
-            print "server issue"
-            self.socket.close()
-            return
+        # response = self.receive()
+        # if response!= OK:
+        #     print "server issue"
+        #     self.socket.close()
+        #     return
 
 
     def handle_command(self, command_dict):
@@ -38,7 +38,7 @@ class Client:
            self.send_response({"info_types":self.info_types.keys()})
         elif command_dict["command"] in self.info_types.keys():
             print
-            self.send_response({command_dict : self.info_types[command_dict]})
+            self.send_response({command_dict["command"] : self.info_types[command_dict["command"]]})
         elif command_dict == "*":
             self.send_response(self.info_types)
         elif command_dict== "disconnect":
@@ -67,12 +67,17 @@ class Client:
         self.socket.connect(server_address)
 
     def handle_connection(self):
-        server_address=('10.35.77.221',3030)
+        server_address=('127.0.0.1',3030)
         self.connect(server_address)
-        self.send_response(self.name)
+        self.send_response({"name":self.name})
+        response=self.socket.recv(1024)
+        if response != OK:
+            print "error{}".format(response)
+            return
+        print "{}".format(response)
 
 
-        self.send_response(self.info_types)
+        self.send_response(self.info_types.keys())
 
         while True:
             command=self.receive()
@@ -90,7 +95,7 @@ info_types={"os_type": "Linux Ubuntu 16.04.1",
   "ports": ["8000","12345"],
   "storage_usage": "2.5T",
   "gpu_type": ["GeForce GTX 1080 Ti", "GeForce GTX 1080 Ti"]}
-name="Daniel"
+name="Daniel2"
 #address='10.35.77.221',port=3030
 
 
