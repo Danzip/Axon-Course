@@ -18,6 +18,10 @@ def create_2d_filter(filter):
     #print hy
     return np.dot(hy,hx)
 
+def sobel_op():
+    hx=np.array([[1,0,-1]])
+    hy=np.array([[1],[2],[-1]])
+    return np.dot(hy,hx)
 
 def create_average_filter(size):
     if size<0:
@@ -34,3 +38,4 @@ aFilter2D= create_average_filter((5,5))
 
 print gFilter2D
 print aFilter2D
+print sobel_op()
